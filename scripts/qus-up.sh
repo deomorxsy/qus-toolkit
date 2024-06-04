@@ -1,9 +1,31 @@
-#!/usr/bin/bash
+#!/usr/bin/sh
 #
-udisksctl mount -b /dev/sdc2
+device=$1
+uuid=$(sudo blkid /dev/sdc2 | awk '{print $2}' | sed 's/^[^"]*"\([^"]*\)".*/\1/')
 
-sudo mount -o bind /dev "/run/media/$USER/blob/dev"
-sudo mount -o bind /dev/pts "/run/media/$USER/blob/dev/pts"
-sudo mount -o bind /proc "/run/media/$USER/blob/proc"
-sudo mount -o bind /sys "/run/media/$USER/blob/sys"
-sudo mount -o bind /run "/run/media/$USER/blob/run"
+up() {
+echo "mounting device..."
+udisksctl mount -b "$device"
+# on target rootfs, bind local rootfs directories in the
+# chroot target rootfs
+for f in 'dev' 'dev/pts' 'proc' 'sys' 'run'; do
+   sudo mount --bind "/$f" "/run/media/$USER/$uuid/$f";
+done
+}
+
+down() {
+echo "UNmounting device..."
+for f in 'dev' 'dev/pts' 'proc' 'sys' 'run'; do
+    sudo umount "/run/media/$USER/$uuid/$f";
+done
+
+udisksctl unmount -b "$device"
+}
+
+# if uuid appears under proc/mounts, unmount; else mount
+if grep -qs "$uuid" /proc/mounts; then
+    down
+else
+    up
+fi
+
