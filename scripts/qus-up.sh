@@ -4,7 +4,7 @@ device=$1
 uuid=$(sudo blkid /dev/sdc2 | awk '{print $2}' | sed 's/^[^"]*"\([^"]*\)".*/\1/')
 
 up() {
-echo "mounting device..."
+echo "mounting device and pseudo-filesystems..."
 udisksctl mount -b "$device"
 # on target rootfs, bind local rootfs directories in the
 # chroot target rootfs
@@ -14,8 +14,8 @@ done
 }
 
 down() {
-echo "UNmounting device..."
-for f in 'dev' 'dev/pts' 'proc' 'sys' 'run'; do
+echo "UNmounting pseudo-filesystems in reverse order and device..."
+for f in 'run' 'sys' 'proc' 'dev/pts' 'dev'; do
     sudo umount "/run/media/$USER/$uuid/$f";
 done
 
