@@ -11,10 +11,19 @@ udisksctl mount -b "$device"
 for f in 'dev' 'dev/pts' 'proc' 'sys' 'run'; do
    sudo mount --bind "/$f" "/run/media/$USER/$uuid/$f";
 done
+
+echo "Setting up Ftrace: mounting trace and debug filesystems..."
+sudo mount -t tracefs tracefs "/run/media/$USER/$uuid/sys/kernel/tracing/"
+sudo mount -t debugfs debufs "/run/media/$USER/$uuid/sys/kernel/debug/"
 }
 
 down() {
+echo "UNmounting debug and trace filesystems..."
+sudo umount "/run/media/$USER/$uuid/sys/kernel/debug/"
+sudo umount "/run/media/$USER/$uuid/sys/kernel/tracing/"
+
 echo "UNmounting pseudo-filesystems in reverse order and device..."
+
 for f in 'run' 'sys' 'proc' 'dev/pts' 'dev'; do
     sudo umount "/run/media/$USER/$uuid/$f";
 done
